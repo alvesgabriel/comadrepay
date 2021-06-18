@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+    database:
+        container_name: comadrepay_database
+        image: postgres
+        volumes:
+            - ./.pgdata:/var/lib/postgresql/data
+        environment:
+            - LC_ALL=C.UTF-8
+            - POSTGRES_DB=comadrepay_dev
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        ports:
+            - 5432:5432
