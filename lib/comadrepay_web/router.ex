@@ -7,6 +7,8 @@ defmodule ComadrepayWeb.Router do
 
   scope "/api", ComadrepayWeb do
     pipe_through :api
+
+    resources "/auth/users", UserController, except: [:new, :edit]
   end
 
   # Enables LiveDashboard only for development
