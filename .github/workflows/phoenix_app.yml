@@ -1,0 +1,28 @@
+name: Phoenix application
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+
+    services:
+      db:
+        image: postgres:12
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: "23.1"
+          elixir-version: "1.11.2"
+      - run: mix deps.get
+      - run: mix test
