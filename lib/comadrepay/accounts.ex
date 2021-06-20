@@ -7,6 +7,7 @@ defmodule Comadrepay.Accounts do
   alias Comadrepay.Repo
 
   alias Comadrepay.Accounts.User
+  alias Comadrepay.Payment.Account
 
   @doc """
   Returns the list of users.
@@ -19,6 +20,7 @@ defmodule Comadrepay.Accounts do
   """
   def list_users do
     Repo.all(User)
+    |> Repo.preload(:account)
   end
 
   @doc """
@@ -35,7 +37,10 @@ defmodule Comadrepay.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id)
+  def get_user!(id) do
+    Repo.get!(User, id)
+    |> Repo.preload(:account)
+  end
 
   @doc """
   Creates a user.
@@ -50,9 +55,35 @@ defmodule Comadrepay.Accounts do
 
   """
   def create_user(attrs \\ %{}) do
+    transaction =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:user, insert_user(attrs))
+      |> Ecto.Multi.insert(:account, fn %{user: user} ->
+        user
+        |> Ecto.build_assoc(:account)
+        |> Account.changeset(attrs)
+      end)
+      |> Comadrepay.Repo.transaction()
+
+    case transaction do
+      {:ok, result} ->
+        user =
+          result.user
+          |> Repo.preload(:account)
+
+        {:ok, user}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :account, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp insert_user(attrs) do
     %User{}
     |> User.changeset(attrs)
-    |> Repo.insert()
   end
 
   @doc """
