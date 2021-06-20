@@ -58,6 +58,13 @@ defmodule ComadrepayWeb.UserControllerTest do
       conn = post(conn, Routes.user_path(conn, :create), user: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
+
+    test "renders errors when balance is invalid", %{conn: conn} do
+      user = Map.put(@create_attrs, :balance, -1)
+
+      conn = post(conn, Routes.user_path(conn, :create), user: user)
+      assert json_response(conn, 422)["errors"] == %{"balance" => ["balance minimum is zero"]}
+    end
   end
 
   describe "update user" do

@@ -24,6 +24,6 @@ Comadrepay.Accounts.create_user(%{
   cpf: "525.091.767-49",
   first_name: "Snow",
   last_name: "White",
-  password: "dwarfs",
-  password_confirmation: "dwarfs"
+  password: "7dwarves",
+  password_confirmation: "7dwarves"
 })

@@ -2,6 +2,8 @@ defmodule Comadrepay.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Comadrepay.Payment.Account
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "users" do
@@ -12,6 +14,9 @@ defmodule Comadrepay.Accounts.User do
     field :password_hash, :string
     field :password, :string, virtual: true
     field :password_confirmation, :string, virtual: true
+    field :balance, :decimal, virtual: true
+
+    has_one :account, Account
 
     timestamps()
   end
