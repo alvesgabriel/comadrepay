@@ -3,42 +3,10 @@ defmodule Comadrepay.AccountsTest do
 
   alias Comadrepay.Accounts
 
+  import Comadrepay.AccountsFixtures
+
   describe "users" do
     alias Comadrepay.Accounts.User
-
-    @valid_attrs %{
-      cpf: "544.274.033-01",
-      email: "user@email.com",
-      first_name: "some first_name",
-      last_name: "some last_name",
-      password: "some password_hash",
-      password_confirmation: "some password_hash"
-    }
-    @update_attrs %{
-      cpf: "895.377.376-83",
-      email: "user123@email.com",
-      first_name: "some updated first_name",
-      last_name: "some updated last_name",
-      password: "some updated password_hash",
-      password_confirmation: "some updated password_hash"
-    }
-    @invalid_attrs %{
-      cpf: nil,
-      email: nil,
-      first_name: nil,
-      last_name: nil,
-      password: nil,
-      password_confirmation: nil
-    }
-
-    def user_fixture(attrs \\ %{}) do
-      {:ok, user} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Accounts.create_user()
-
-      %{user | password: nil, password_confirmation: nil}
-    end
 
     test "list_users/0 returns all users" do
       user = user_fixture()
@@ -51,31 +19,32 @@ defmodule Comadrepay.AccountsTest do
     end
 
     test "create_user/1 with valid data creates a user" do
-      assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs)
-      assert user.cpf == "544.274.033-01"
-      assert user.email == "user@email.com"
-      assert user.first_name == "some first_name"
-      assert user.last_name == "some last_name"
-      assert user.password == "some password_hash"
-      assert user.password_confirmation == "some password_hash"
+      user_attrs = user_valid_attrs()
+      assert {:ok, %User{} = new_user} = Accounts.create_user(user_attrs)
+      assert new_user.cpf == user_attrs.cpf
+      assert new_user.email == user_attrs.email
+      assert new_user.first_name == user_attrs.first_name
+      assert new_user.last_name == user_attrs.last_name
+      assert new_user.password == user_attrs.password
+      assert new_user.password_confirmation == user_attrs.password_confirmation
     end
 
     test "create_user/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(user_invalid_attrs())
     end
 
     test "create_user/1 with invalid cpf returns error invalid verifier" do
-      {:error, user} = Accounts.create_user(%{@valid_attrs | cpf: "123.456.789-00"})
+      {:error, user} = Accounts.create_user(%{user_valid_attrs() | cpf: "123.456.789-00"})
       assert user.errors == [cpf: {"is invalid", [reason: :invalid_verifier]}]
     end
 
     test "create_user/1 with invalid cpf returns error invalid format" do
-      {:error, user} = Accounts.create_user(%{@valid_attrs | cpf: "yyy.yyy.yyy-xx"})
+      {:error, user} = Accounts.create_user(%{user_valid_attrs() | cpf: "yyy.yyy.yyy-xx"})
       assert user.errors == [cpf: {"is invalid", [reason: :invalid_format]}]
     end
 
     test "create_user/1 with invalid email returns error invalid format" do
-      {:error, user} = Accounts.create_user(%{@valid_attrs | email: "email.com"})
+      {:error, user} = Accounts.create_user(%{user_valid_attrs() | email: "email.com"})
       assert user.errors == [email: {"email format invalid", [validation: :format]}]
     end
 
@@ -83,7 +52,11 @@ defmodule Comadrepay.AccountsTest do
       password = "1234"
 
       {:error, user} =
-        Accounts.create_user(%{@valid_attrs | password: password, password_confirmation: password})
+        Accounts.create_user(%{
+          user_valid_attrs()
+          | password: password,
+            password_confirmation: password
+        })
 
       assert user.errors == [
                password:
@@ -96,7 +69,11 @@ defmodule Comadrepay.AccountsTest do
       password = String.duplicate("1", 129)
 
       {:error, user} =
-        Accounts.create_user(%{@valid_attrs | password: password, password_confirmation: password})
+        Accounts.create_user(%{
+          user_valid_attrs()
+          | password: password,
+            password_confirmation: password
+        })
 
       assert user.errors == [
                password:
@@ -107,18 +84,19 @@ defmodule Comadrepay.AccountsTest do
 
     test "update_user/2 with valid data updates the user" do
       user = user_fixture()
-      assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
-      assert user.cpf == "895.377.376-83"
-      assert user.email == "user123@email.com"
-      assert user.first_name == "some updated first_name"
-      assert user.last_name == "some updated last_name"
-      assert user.password == "some updated password_hash"
-      assert user.password_confirmation == "some updated password_hash"
+      user_attrs = user_update_attrs()
+      assert {:ok, %User{} = user_updated} = Accounts.update_user(user, user_attrs)
+      assert user_updated.cpf == user_attrs.cpf
+      assert user_updated.email == user_attrs.email
+      assert user_updated.first_name == user_attrs.first_name
+      assert user_updated.last_name == user_attrs.last_name
+      assert user_updated.password == user_attrs.password
+      assert user_updated.password_confirmation == user_attrs.password_confirmation
     end
 
     test "update_user/2 with invalid data returns error changeset" do
       user = user_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, user_invalid_attrs())
       assert user == Accounts.get_user!(user.id)
     end
 

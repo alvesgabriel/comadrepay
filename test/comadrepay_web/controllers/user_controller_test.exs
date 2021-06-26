@@ -1,111 +1,111 @@
 defmodule ComadrepayWeb.UserControllerTest do
   use ComadrepayWeb.ConnCase
 
+  import Comadrepay.AccountsFixtures
+
   alias Comadrepay.Accounts
   alias Comadrepay.Accounts.User
 
-  @create_attrs %{
-    cpf: "544.274.033-01",
-    email: "user@email.com",
-    first_name: "some first_name",
-    last_name: "some last_name",
-    password: "some password_hash",
-    password_confirmation: "some password_hash"
-  }
-  @update_attrs %{
-    cpf: "895.377.376-83",
-    email: "user123@email.com",
-    first_name: "some updated first_name",
-    last_name: "some updated last_name",
-    password: "some updated password_hash",
-    password_confirmation: "some updated password_hash"
-  }
-  @invalid_attrs %{cpf: nil, email: nil, first_name: nil, last_name: nil, password_hash: nil}
-
   def fixture(:user) do
-    {:ok, user} = Accounts.create_user(@create_attrs)
+    {:ok, user} = Accounts.create_user(user_valid_attrs())
     user
   end
 
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    user = fixture(:user)
+    token = Accounts.generate_user_api_token(user)
+
+    conn = put_req_header(conn, "accept", "application/json")
+    conn_auth = put_req_header(conn, "authorization", "Bearer #{token}")
+
+    {:ok, conn: conn, conn_auth: conn_auth, user: user}
   end
 
-  describe "index" do
-    test "lists all users", %{conn: conn} do
-      conn = get(conn, Routes.user_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
-  describe "create user" do
+  describe "POST /api/users" do
     test "renders user when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      user = user_valid_attrs()
+      conn = post(conn, Routes.user_path(conn, :create), user: user)
 
-      conn = get(conn, Routes.user_path(conn, :show, id))
-
-      assert %{
-               "id" => ^id,
-               "cpf" => "544.274.033-01",
-               "email" => "user@email.com",
-               "first_name" => "some first_name",
-               "last_name" => "some last_name"
-             } = json_response(conn, 200)["data"]
+      data = json_response(conn, 201)["data"]
+      assert data["cpf"] == user.cpf
+      assert data["email"] == user.email
+      assert data["first_name"] == user.first_name
+      assert data["last_name"] == user.last_name
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.user_path(conn, :create), user: @invalid_attrs)
+      conn = post(conn, Routes.user_path(conn, :create), user: user_invalid_attrs())
       assert json_response(conn, 422)["errors"] != %{}
     end
 
     test "renders errors when balance is invalid", %{conn: conn} do
-      user = Map.put(@create_attrs, :balance, -1)
+      user = Map.put(user_valid_attrs(), :balance, -1)
 
       conn = post(conn, Routes.user_path(conn, :create), user: user)
       assert json_response(conn, 422)["errors"] == %{"balance" => ["balance minimum is zero"]}
     end
   end
 
-  describe "update user" do
-    setup [:create_user]
-
-    test "renders user when data is valid", %{conn: conn, user: %User{id: id} = user} do
-      conn = put(conn, Routes.user_path(conn, :update, user), user: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.user_path(conn, :show, id))
-
-      assert %{
-               "id" => ^id,
-               "cpf" => "895.377.376-83",
-               "email" => "user123@email.com",
-               "first_name" => "some updated first_name",
-               "last_name" => "some updated last_name"
-             } = json_response(conn, 200)["data"]
+  describe "POST /api/login" do
+    test "render token when login is valid", %{conn: conn, user: user} do
+      login = %{email: user.email, password: user.password}
+      conn = post(conn, Routes.user_path(conn, :login), login)
+      token = json_response(conn, 200)["token"]
+      assert {:ok, _} = Comadrepay.Auth.Guardian.decode_and_verify(token)
     end
 
-    test "renders errors when data is invalid", %{conn: conn, user: user} do
-      conn = put(conn, Routes.user_path(conn, :update, user), user: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+    test "render errors when password is invalid", %{conn: conn, user: user} do
+      login = %{email: "abc." <> user.email, password: "invalid password"}
+      conn = post(conn, Routes.user_path(conn, :login), login)
+      assert %{"errors" => %{"detail" => "email or password wrong"}} == json_response(conn, 400)
+    end
+
+    test "render errors when email is invalid", %{conn: conn, user: user} do
+      login = %{email: "invalid@email.com", password: user.password}
+      conn = post(conn, Routes.user_path(conn, :login), login)
+      assert %{"errors" => %{"detail" => "email or password wrong"}} == json_response(conn, 400)
     end
   end
 
-  describe "delete user" do
-    setup [:create_user]
+  describe "GET /api/users" do
+    test "lists all users", %{conn_auth: conn_auth} do
+      conn_auth = get(conn_auth, Routes.user_path(conn_auth, :index))
+      assert json_response(conn_auth, 200)["data"] != []
+    end
+  end
 
-    test "deletes chosen user", %{conn: conn, user: user} do
-      conn = delete(conn, Routes.user_path(conn, :delete, user))
-      assert response(conn, 204)
+  describe "PUT /api/users/:id" do
+    test "renders user when data is valid", %{conn_auth: conn_auth, user: %User{id: id} = user} do
+      user_updated = user_update_attrs()
+      conn_auth = put(conn_auth, Routes.user_path(conn_auth, :update, user), user: user_updated)
+
+      assert %{"id" => ^id} = json_response(conn_auth, 200)["data"]
+
+      conn_auth = get(conn_auth, Routes.user_path(conn_auth, :show, id))
+
+      data = json_response(conn_auth, 200)["data"]
+      assert data["cpf"] == user_updated.cpf
+      assert data["email"] == user_updated.email
+      assert data["first_name"] == user_updated.first_name
+      assert data["last_name"] == user_updated.last_name
+    end
+
+    test "renders errors when data is invalid", %{conn_auth: conn_auth, user: user} do
+      conn_auth =
+        put(conn_auth, Routes.user_path(conn_auth, :update, user), user: user_invalid_attrs())
+
+      assert json_response(conn_auth, 422)["errors"] != %{}
+    end
+  end
+
+  describe "DELETE /api/users/:id" do
+    test "deletes chosen user", %{conn_auth: conn_auth, user: user} do
+      conn_auth = delete(conn_auth, Routes.user_path(conn_auth, :delete, user))
+      assert response(conn_auth, 204)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.user_path(conn, :show, user))
+        get(conn_auth, Routes.user_path(conn_auth, :show, user))
       end
     end
-  end
-
-  defp create_user(_) do
-    user = fixture(:user)
-    %{user: user}
   end
 end

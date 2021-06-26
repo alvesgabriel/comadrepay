@@ -40,4 +40,16 @@ defmodule ComadrepayWeb.UserController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  def login(conn, %{"email" => email, "password" => password}) do
+    if user = Accounts.get_user_by_email_and_password(email, password) do
+      token = Accounts.generate_user_api_token(user)
+
+      conn
+      |> render("login.json", %{user: user, token: token})
+    else
+      conn
+      |> ComadrepayWeb.FallbackController.call({:error, :email_password_wrong})
+    end
+  end
 end

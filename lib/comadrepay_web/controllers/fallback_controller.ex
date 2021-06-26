@@ -21,4 +21,12 @@ defmodule ComadrepayWeb.FallbackController do
     |> put_view(ComadrepayWeb.ErrorView)
     |> render(:"404")
   end
+
+  def call(conn, {:error, :email_password_wrong}) do
+    body = Jason.encode!(%{errors: %{detail: "email or password wrong"}})
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(400, body)
+  end
 end
