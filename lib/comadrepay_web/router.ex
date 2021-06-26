@@ -5,12 +5,22 @@ defmodule ComadrepayWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_auth do
+    plug :accepts, ["json"]
+    plug Comadrepay.Auth.Pipeline
+  end
+
   scope "/api", ComadrepayWeb do
     pipe_through :api
 
-    scope "/auth" do
-      resources "/users", UserController, except: [:new, :edit]
-    end
+    post "/users", UserController, :create
+    post "/login", UserController, :login
+  end
+
+  scope "/api", ComadrepayWeb do
+    pipe_through :api_auth
+
+    resources "/users", UserController, except: [:create, :new, :edit]
   end
 
   # Enables LiveDashboard only for development

@@ -24,6 +24,14 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :comadrepay, Comadrepay.Auth.Guardian,
+  issuer: "Comadrepay",
+  secret_key:
+    System.get_env(
+      "GUARDIAN_SECRET",
+      "Secret key. You can use `mix guardian.gen.secret` to get one"
+    )
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

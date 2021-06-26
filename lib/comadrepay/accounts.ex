@@ -132,4 +132,17 @@ defmodule Comadrepay.Accounts do
   def change_user(%User{} = user, attrs \\ %{}) do
     User.changeset(user, attrs)
   end
+
+  def get_user_by_email_and_password(email, password) do
+    with %User{} = user <- Repo.get_by(User, email: email) |> Repo.preload(:account) do
+      if Argon2.verify_pass(password, user.password_hash), do: user
+    end
+  end
+
+  def generate_user_api_token(user) do
+    {:ok, token, _claims} =
+      Comadrepay.Auth.Guardian.encode_and_sign(user, %{}, token_type: :access)
+
+    token
+  end
 end

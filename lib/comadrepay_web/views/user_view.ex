@@ -20,4 +20,8 @@ defmodule ComadrepayWeb.UserView do
       balance: user.account.balance
     }
   end
+
+  def render("login.json", %{user: user, token: token}) do
+    Map.put(render_one(user, UserView, "user.json"), :token, token)
+  end
 end
