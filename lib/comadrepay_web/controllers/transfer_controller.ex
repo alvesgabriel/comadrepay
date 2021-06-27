@@ -24,4 +24,12 @@ defmodule ComadrepayWeb.TransferController do
     transfer = Payment.get_transfer!(id)
     render(conn, "show.json", transfer: transfer)
   end
+
+  def reversal(conn, %{"id" => id}) do
+    with {:ok, %Transfer{} = transfer} <- Payment.reversal(id) do
+      conn
+      |> put_status(:no_content)
+      |> render("show.json", transfer: transfer)
+    end
+  end
 end

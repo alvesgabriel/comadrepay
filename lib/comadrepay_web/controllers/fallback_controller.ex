@@ -29,4 +29,12 @@ defmodule ComadrepayWeb.FallbackController do
     |> put_resp_content_type("application/json")
     |> send_resp(400, body)
   end
+
+  def call(conn, {:error, :already_reversaled}) do
+    body = Jason.encode!(%{errors: %{detail: "transfer already reversaled"}})
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(400, body)
+  end
 end
