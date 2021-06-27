@@ -15,7 +15,8 @@ defmodule ComadrepayWeb.TransferView do
       id: transfer.id,
       from_account_id: transfer.from_account_id,
       to_account_id: transfer.to_account_id,
-      value: transfer.value
+      value: transfer.value,
+      reversaled: transfer.reversaled
     }
   end
 end

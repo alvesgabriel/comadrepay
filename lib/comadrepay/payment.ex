@@ -117,19 +117,48 @@ defmodule Comadrepay.Payment do
     |> Repo.insert()
   end
 
+  def change_transfer(%Transfer{} = transfer, attrs \\ %{}) do
+    Transfer.changeset(transfer, attrs)
+  end
+
   def update_transfer(%Transfer{} = transfer, attrs) do
     transfer
     |> Transfer.changeset(attrs)
     |> Repo.update()
   end
 
-  def transfer(from_account_id, to_account_id, value) do
+  defp build_transfer(transaction, from_account_id, to_account_id, value) do
     from_account = get_account!(from_account_id)
     to_account = get_account!(to_account_id)
 
+    transaction
+    |> Ecto.Multi.update(
+      :from_account,
+      fn _ ->
+        debit = %{
+          balance: Decimal.sub(from_account.balance, value)
+        }
+
+        change_account(from_account, debit)
+      end
+    )
+    |> Ecto.Multi.update(
+      :to_account,
+      fn _ ->
+        credit = %{
+          balance: Decimal.add(to_account.balance, value)
+        }
+
+        change_account(to_account, credit)
+      end
+    )
+    |> Comadrepay.Repo.transaction()
+  end
+
+  def transfer(from_account_id, to_account_id, value) do
     attrs = %{
-      from_account_id: from_account.id,
-      to_account_id: to_account.id,
+      from_account_id: from_account_id,
+      to_account_id: to_account_id,
       value: value
     }
 
@@ -137,34 +166,51 @@ defmodule Comadrepay.Payment do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(
         :transfer,
-        insert_transfer(attrs),
-        returning: true
+        insert_transfer(attrs)
       )
-      |> Ecto.Multi.update(
-        :from_account,
-        fn %{transfer: _transfer} ->
-          debit = %{
-            balance: Decimal.sub(from_account.balance, attrs.value)
-          }
-
-          change_account(from_account, debit)
-        end
+      |> build_transfer(
+        from_account_id,
+        to_account_id,
+        value
       )
-      |> Ecto.Multi.update(
-        :to_account,
-        fn %{transfer: _transfer} ->
-          credit = %{
-            balance: Decimal.add(to_account.balance, value)
-          }
-
-          change_account(to_account, credit)
-        end
-      )
-      |> Comadrepay.Repo.transaction()
 
     case transaction do
       {:ok, result} -> {:ok, result.transfer}
       {:error, _, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  def reversal(id) do
+    with %Transfer{} = transfered <- get_transfer!(id) do
+      if transfered.reversaled do
+        {:error, :already_reversaled}
+      else
+        attrs = %{
+          from_account_id: transfered.to_account_id,
+          to_account_id: transfered.from_account_id,
+          value: transfered.value,
+          reversaled: true
+        }
+
+        transaction =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(
+            :transfer,
+            fn _ ->
+              change_transfer(transfered, attrs)
+            end
+          )
+          |> build_transfer(
+            transfered.to_account_id,
+            transfered.from_account_id,
+            transfered.value
+          )
+
+        case transaction do
+          {:ok, result} -> {:ok, result.transfer}
+          {:error, _, changeset, _} -> {:error, changeset}
+        end
+      end
     end
   end
 end

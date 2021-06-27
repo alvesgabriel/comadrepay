@@ -25,6 +25,7 @@ defmodule ComadrepayWeb.Router do
     scope "/accounts" do
       post "/transfer", TransferController, :transfer
       get "/transfer/:id", TransferController, :show
+      put "/transfer/:id/reversal", TransferController, :reversal
     end
   end
 

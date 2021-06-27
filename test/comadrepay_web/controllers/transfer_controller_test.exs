@@ -32,4 +32,30 @@ defmodule ComadrepayWeb.TransferControllerTest do
       assert data["value"] == Decimal.to_string(transfer.value)
     end
   end
+
+  describe "PUT /api/accounts/transfer/:id/reversal" do
+    test "renders reversal transfer when data is valid", %{conn_auth: conn_auth} do
+      transfer = transfer_fixture()
+      conn_auth = put(conn_auth, Routes.transfer_path(conn_auth, :reversal, transfer))
+
+      assert data = json_response(conn_auth, 204)["data"]
+
+      assert data["from_account_id"] == transfer.to_account_id
+      assert data["to_account_id"] == transfer.from_account_id
+      assert data["value"] == Decimal.to_string(transfer.value)
+      assert data["reversaled"] == true
+    end
+
+    test "renders reversal transfer when reversaled is true", %{conn_auth: conn_auth} do
+      transfer = transfer_fixture()
+      conn_auth = put(conn_auth, Routes.transfer_path(conn_auth, :reversal, transfer))
+
+      assert json_response(conn_auth, 204)["data"]
+
+      conn_auth = put(conn_auth, Routes.transfer_path(conn_auth, :reversal, transfer))
+
+      assert data = json_response(conn_auth, 400)
+      assert data == %{"errors" => %{"detail" => "transfer already reversaled"}}
+    end
+  end
 end
