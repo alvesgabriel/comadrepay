@@ -16,7 +16,8 @@ Comadrepay.Accounts.create_user(%{
   first_name: "Ella",
   last_name: "Gertrude",
   password: "glass.shoes",
-  password_confirmation: "glass.shoes"
+  password_confirmation: "glass.shoes",
+  balance: 1000
 })
 
 Comadrepay.Accounts.create_user(%{
@@ -25,5 +26,6 @@ Comadrepay.Accounts.create_user(%{
   first_name: "Snow",
   last_name: "White",
   password: "7dwarves",
-  password_confirmation: "7dwarves"
+  password_confirmation: "7dwarves",
+  balance: 1000
 })

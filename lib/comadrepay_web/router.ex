@@ -21,6 +21,11 @@ defmodule ComadrepayWeb.Router do
     pipe_through :api_auth
 
     resources "/users", UserController, except: [:create, :new, :edit]
+
+    scope "/accounts" do
+      post "/transfer", TransferController, :transfer
+      get "/transfer/:id", TransferController, :show
+    end
   end
 
   # Enables LiveDashboard only for development

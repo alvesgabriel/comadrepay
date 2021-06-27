@@ -7,6 +7,7 @@ defmodule Comadrepay.Payment do
   alias Comadrepay.Repo
 
   alias Comadrepay.Payment.Account
+  alias Comadrepay.Payment.Transfer
 
   @doc """
   Returns the list of accounts.
@@ -100,5 +101,70 @@ defmodule Comadrepay.Payment do
   """
   def change_account(%Account{} = account, attrs \\ %{}) do
     Account.changeset(account, attrs)
+  end
+
+  def get_transfer!(id) do
+    Repo.get!(Transfer, id)
+  end
+
+  def insert_transfer(attrs \\ %{}) do
+    %Transfer{}
+    |> Transfer.changeset(attrs)
+  end
+
+  def create_transfer(attrs \\ %{}) do
+    insert_transfer(attrs)
+    |> Repo.insert()
+  end
+
+  def update_transfer(%Transfer{} = transfer, attrs) do
+    transfer
+    |> Transfer.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def transfer(from_account_id, to_account_id, value) do
+    from_account = get_account!(from_account_id)
+    to_account = get_account!(to_account_id)
+
+    attrs = %{
+      from_account_id: from_account.id,
+      to_account_id: to_account.id,
+      value: value
+    }
+
+    transaction =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(
+        :transfer,
+        insert_transfer(attrs),
+        returning: true
+      )
+      |> Ecto.Multi.update(
+        :from_account,
+        fn %{transfer: _transfer} ->
+          debit = %{
+            balance: Decimal.sub(from_account.balance, attrs.value)
+          }
+
+          change_account(from_account, debit)
+        end
+      )
+      |> Ecto.Multi.update(
+        :to_account,
+        fn %{transfer: _transfer} ->
+          credit = %{
+            balance: Decimal.add(to_account.balance, value)
+          }
+
+          change_account(to_account, credit)
+        end
+      )
+      |> Comadrepay.Repo.transaction()
+
+    case transaction do
+      {:ok, result} -> {:ok, result.transfer}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
   end
 end
