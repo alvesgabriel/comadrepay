@@ -3,6 +3,7 @@ defmodule Comadrepay.AccountsFixtures do
 
   def unique_email, do: "user#{System.unique_integer([:positive])}@email.com"
   def unique_cpf, do: CPF.generate() |> CPF.format()
+  def default_balance, do: 1000
 
   def user_valid_attrs() do
     %{
@@ -11,7 +12,8 @@ defmodule Comadrepay.AccountsFixtures do
       first_name: "some first_name",
       last_name: "some last_name",
       password: "some password_hash",
-      password_confirmation: "some password_hash"
+      password_confirmation: "some password_hash",
+      balance: 1000
     }
   end
 
