@@ -23,9 +23,10 @@ defmodule ComadrepayWeb.Router do
     resources "/users", UserController, except: [:create, :new, :edit]
 
     scope "/accounts" do
-      post "/transfer", TransferController, :transfer
-      get "/transfer/:id", TransferController, :show
-      put "/transfer/:id/reversal", TransferController, :reversal
+      get "/transfers", TransferController, :statement
+      post "/transfers", TransferController, :transfer
+      get "/transfers/:id", TransferController, :show
+      put "/transfers/:id/reversal", TransferController, :reversal
     end
   end
 
