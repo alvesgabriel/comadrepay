@@ -32,4 +32,10 @@ defmodule ComadrepayWeb.TransferController do
       |> render("show.json", transfer: transfer)
     end
   end
+
+  def statement(conn, %{"date_begin" => date_begin, "date_end" => date_end} = _params) do
+    transfers = Payment.statemet(date_begin, date_end)
+
+    render(conn, "index.json", transfers: transfers)
+  end
 end

@@ -213,4 +213,24 @@ defmodule Comadrepay.Payment do
       end
     end
   end
+
+  def statemet(date_begin, date_end) do
+    {:ok, date_begin} = NaiveDateTime.from_iso8601(date_begin)
+    {:ok, date_end} = NaiveDateTime.from_iso8601(date_end)
+
+    query =
+      from t in "transfers",
+        where: t.inserted_at >= ^date_begin and t.inserted_at <= ^date_end,
+        select: %Transfer{
+          id: type(t.id, :string),
+          from_account_id: type(t.from_account_id, :string),
+          to_account_id: type(t.to_account_id, :string),
+          value: t.value,
+          reversaled: t.reversaled,
+          inserted_at: t.inserted_at,
+          updated_at: t.updated_at
+        }
+
+    Repo.all(query)
+  end
 end
