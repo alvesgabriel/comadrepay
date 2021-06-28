@@ -20,6 +20,7 @@ defmodule ComadrepayWeb.Router do
   scope "/api", ComadrepayWeb do
     pipe_through :api_auth
 
+    delete "/logout", UserController, :logout
     resources "/users", UserController, except: [:create, :new, :edit]
 
     scope "/accounts" do
