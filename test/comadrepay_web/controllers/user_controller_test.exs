@@ -117,4 +117,14 @@ defmodule ComadrepayWeb.UserControllerTest do
       assert is_nil(data)
     end
   end
+
+  describe "GET /api/accounts/balance" do
+    test "renders balance statement when data is valid", %{conn_auth: conn_auth, user: user} do
+      conn_auth = get(conn_auth, Routes.user_path(conn_auth, :balance))
+
+      assert data = json_response(conn_auth, 200)
+      assert data["account_id"] == user.account.id
+      assert data["balance"] == to_string(user.account.balance)
+    end
+  end
 end

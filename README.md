@@ -17,6 +17,7 @@ The application is run in Heroku. [Click here to access](https://comadrepay.hero
   * [Get User](#get-user)
   * [Update User](#update-user)
   * [Delete User](#delete-user)
+  * [Account Balance](#account-balance)
 * [Authentication](#authentication)
   * [Login](#login)
   * [Logout](#logout)
@@ -86,6 +87,11 @@ Body
 
 ```http
 DELETE /api/users/:id authenticated
+```
+
+### Account Balance
+```http
+GET /api/accounts/balance
 ```
 
 ## Authentication
