@@ -52,4 +52,14 @@ defmodule ComadrepayWeb.UserController do
       |> ComadrepayWeb.FallbackController.call({:error, :email_password_wrong})
     end
   end
+
+  def logout(conn, _params) do
+    token = Guardian.Plug.current_token(conn)
+
+    with {:ok, _} <- Comadrepay.Auth.Guardian.revoke(token) do
+      conn
+      |> put_status(:no_content)
+      |> json(nil)
+    end
+  end
 end

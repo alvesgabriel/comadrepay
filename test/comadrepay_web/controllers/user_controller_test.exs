@@ -108,4 +108,13 @@ defmodule ComadrepayWeb.UserControllerTest do
       end
     end
   end
+
+  describe "DELETE /api/logout" do
+    test "renders logout when data is valid", %{conn_auth: conn_auth} do
+      conn_auth = delete(conn_auth, Routes.user_path(conn_auth, :logout))
+
+      data = json_response(conn_auth, 204)
+      assert is_nil(data)
+    end
+  end
 end
