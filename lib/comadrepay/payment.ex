@@ -103,6 +103,10 @@ defmodule Comadrepay.Payment do
     Account.changeset(account, attrs)
   end
 
+  def get_transfer!(account_id, id) do
+    Repo.get_by!(Transfer, from_account_id: account_id, id: id)
+  end
+
   def get_transfer!(id) do
     Repo.get!(Transfer, id)
   end
@@ -185,19 +189,12 @@ defmodule Comadrepay.Payment do
       if transfered.reversaled do
         {:error, :already_reversaled}
       else
-        attrs = %{
-          from_account_id: transfered.to_account_id,
-          to_account_id: transfered.from_account_id,
-          value: transfered.value,
-          reversaled: true
-        }
-
         transaction =
           Ecto.Multi.new()
           |> Ecto.Multi.update(
             :transfer,
             fn _ ->
-              change_transfer(transfered, attrs)
+              change_transfer(transfered, %{reversaled: true})
             end
           )
           |> build_transfer(
@@ -214,13 +211,17 @@ defmodule Comadrepay.Payment do
     end
   end
 
-  def statemet(date_begin, date_end) do
+  def statemet(date_begin, date_end, account_id) do
     {:ok, date_begin} = NaiveDateTime.from_iso8601(date_begin)
     {:ok, date_end} = NaiveDateTime.from_iso8601(date_end)
 
     query =
       from t in "transfers",
-        where: t.inserted_at >= ^date_begin and t.inserted_at <= ^date_end,
+        where:
+          (type(t.to_account_id, :string) >= ^account_id or
+             type(t.from_account_id, :string) >= ^account_id) and
+            t.inserted_at >= ^date_begin and
+            t.inserted_at <= ^date_end,
         select: %Transfer{
           id: type(t.id, :string),
           from_account_id: type(t.from_account_id, :string),
