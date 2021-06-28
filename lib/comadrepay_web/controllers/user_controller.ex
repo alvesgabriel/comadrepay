@@ -53,6 +53,11 @@ defmodule ComadrepayWeb.UserController do
     end
   end
 
+  def balance(conn, _params) do
+    user = Guardian.Plug.current_resource(conn)
+    render(conn, "balance.json", user: user)
+  end
+
   def login(conn, %{"email" => email, "password" => password}) do
     if user = Accounts.get_user_by_email_and_password(email, password) do
       token = Accounts.generate_user_api_token(user)
