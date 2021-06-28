@@ -16,8 +16,7 @@ defmodule ComadrepayWeb.UserView do
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      cpf: user.cpf,
-      balance: user.account.balance
+      cpf: user.cpf
     }
   end
 

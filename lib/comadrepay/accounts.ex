@@ -134,8 +134,9 @@ defmodule Comadrepay.Accounts do
   end
 
   def get_user_by_email_and_password(email, password) do
-    with %User{} = user <- Repo.get_by(User, email: email) |> Repo.preload(:account) do
-      if Argon2.verify_pass(password, user.password_hash), do: user
+    with %User{} = user <- Repo.get_by(User, email: email),
+         true <- Argon2.verify_pass(password, user.password_hash) do
+      %{user | password_hash: nil}
     end
   end
 

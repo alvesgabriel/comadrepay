@@ -37,4 +37,12 @@ defmodule ComadrepayWeb.FallbackController do
     |> put_resp_content_type("application/json")
     |> send_resp(400, body)
   end
+
+  def call(conn, {:error, :belong_user}) do
+    body = Jason.encode!(%{errors: %{detail: "assets doesn't belong to user"}})
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(403, body)
+  end
 end
